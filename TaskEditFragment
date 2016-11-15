@@ -1,0 +1,75 @@
+public class TaskEditFragment extends Fragment {
+.. .
+// Constants for saving instance state
+static final String TASK_ID = "taskId";
+static final String TASK_DATE_AND_TIME = "taskDateAndTime"; →6
+// Views
+View rootView;
+EditText titleText;
+EditText notesText;
+ImageView imageView;
+TextView dateButton; →13
+TextView timeButton;
+// Some information about this task that we'll store here until we
+// save it to the database
+long taskId;
+Calendar taskDateAndTime; →19
+@Override
+public void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+// If we're restoring state from a previous activity, restore the
+// previous date as well
+if (savedInstanceState != null) {
+taskId = savedInstanceState.getLong(TASK_ID);
+taskDateAndTime = →29
+(Calendar) savedInstanceState.getSerializable
+(TASK_DATE_AND_TIME);
+}
+// If we didn’t have a previous date, use "now"
+if (taskDateAndTime == null) { →35
+taskDateAndTime = Calendar.getInstance();
+}
+. ..
+}
+@Override
+public View onCreateView(LayoutInflater inflater, ViewGroup container,
+Bundle savedInstanceState) {
+. ..
+// From the layout, get a few views that we're going to work with
+rootView = v.getRootView();
+titleText = (EditText) v.findViewById(R.id.title);
+notesText = (EditText) v.findViewById(R.id.notes);
+imageView = (ImageView) v.findViewById(R.id.image);
+dateButton = (TextView) v.findViewById(R.id.task_date); →53
+timeButton = (TextView) v.findViewById(R.id.task_time);
+. . .
+updateDateAndTimeButtons(); →58
+return v;
+}
+@Override
+public void onSaveInstanceState(Bundle outState) {
+super.onSaveInstanceState(outState);
+// These two fields may have changed while our activity was
+// running, so make sure we save them to our outState bundle so
+// we can restore them later in onCreate.
+outState.putLong(TASK_ID, taskId);
+outState.putSerializable(TASK_DATE_AND_TIME, taskDateAndTime); →71
+}
+/**
+* Call this method whenever the task’s date/time has changed and
+* we need to update our date and time buttons.
+*/
+private void updateDateAndTimeButtons() {
+// Set the time button text
+DateFormat timeFormat = →80
+DateFormat.getTimeInstance(DateFormat.SHORT);
+String timeForButton = timeFormat.format(
+taskDateAndTime.getTime());
+timeButton.setText(timeForButton);
+// Set the date button text
+DateFormat dateFormat = DateFormat.getDateInstance(); →87
+String dateForButton = dateFormat.format(
+taskDateAndTime.getTime());
+dateButton.setText(dateForButton);
+}
+}
