@@ -3,20 +3,12 @@ package com.dummies.tasks.fragment;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.app.DialogFragment;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-
-import com.dummies.tasks.R;
 
 import java.util.Calendar;
 
-/**
- * A simple {@link Fragment} subclass.
- */
+
 public class DatePickerDialogFragment extends DialogFragment {
     static final String YEAR = "year";
     static final String MONTH = "month";
@@ -37,8 +29,8 @@ public class DatePickerDialogFragment extends DialogFragment {
         return fragment;
     }
     @Override
-    public Dialog OncreateDialog(Bundle savedInstanceState){
-        OnDateSetListener callback = (OnDateSetListener)
+    public Dialog onCreateDialog(Bundle savedInstanceState){
+        DatePickerDialog.OnDateSetListener callback = (DatePickerDialog.OnDateSetListener)
                 getFragmentManager()
                 .findFragmentByTag
                         (TaskEditFragment
@@ -49,7 +41,8 @@ public class DatePickerDialogFragment extends DialogFragment {
                 args.getInt(YEAR),
                 args.getInt(MONTH),
                 args.getInt(DAY));
-    
+
     }
+
 
 }
