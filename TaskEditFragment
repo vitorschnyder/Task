@@ -1,12 +1,10 @@
 package com.dummies.tasks.fragment;
 
 
-import android.app.DatePickerDialog;
+import android.app.DatePickerDialog.OnDateSetListener;
 import android.app.Fragment;
-import android.app.FragmentTransaction;
-import android.app.TimePickerDialog;
+import android.app.TimePickerDialog.OnTimeSetListener;
 import android.os.Bundle;
-import android.text.format.DateFormat;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -25,17 +23,29 @@ import com.dummies.tasks.adapter.TaskListAdapter;
 import com.dummies.tasks.interfaces.OnEditFinished;
 import com.squareup.picasso.Picasso;
 
+import java.text.DateFormat;
 import java.util.Calendar;
 
 
-public class TaskEditFragment extends Fragment
-    implements DatePickerDialog.OnDateSetListener,
-        TimePickerDialog.OnTimeSetListener
+public class TaskEditFragment extends Fragment implements
+        OnDateSetListener, OnTimeSetListener
 {
-    public static final String DEFAULT_FRAGMENT_TAG = "taskEditFragment";
+    public static final String DEFAULT_FRAGMENT_TAG =
+            "taskEditFragment";
+
+    static final int MENU_SAVE = 1;
+
     //Constants for saving instance state
     static final String TASK_ID = "taskId";
     static final String TASK_DATE_AND_TIME = "taskDateAndTime";
+
+    public static TaskEditFragment newInstance(long id){
+        TaskEditFragment fragment = new TaskEditFragment();
+        Bundle args = new Bundle();
+        args.putLong(TaskEditActivity.EXTRA_TASKID, id);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
 
     //views
@@ -55,6 +65,11 @@ public class TaskEditFragment extends Fragment
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
+        //if we didn´t have a previous date, use now
+        if (taskDateAndTime == null){
+            taskDateAndTime = Calendar.getInstance();
+        }
+
         Bundle arguments = getArguments();
         if (arguments != null){
             taskId = arguments.getLong(TaskEditActivity.EXTRA_TASKID, 0L);
@@ -68,12 +83,14 @@ public class TaskEditFragment extends Fragment
                     (Calendar) savedInstanceState.getSerializable
                             (TASK_DATE_AND_TIME);
         }
-        //if we didn´t have a previous date, use now
-        if (taskDateAndTime == null){
-            taskDateAndTime = Calendar.getInstance();
-        }
 
 
+
+    }
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState){
+        super.onActivityCreated(savedInstanceState);
+        setHasOptionsMenu(true);
     }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -93,7 +110,7 @@ public class TaskEditFragment extends Fragment
         Picasso.with(getActivity())
                 .load(TaskListAdapter.getImageUrlForTask(taskId))
                 .into(imageView);
-        updateDateAndTimeButton();
+        updateDateAndTimeButtons();
 
         //Tell the date and time buttons what to do when we click on
         //them.
@@ -101,7 +118,7 @@ public class TaskEditFragment extends Fragment
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        showDataPicker();
+                        showDatePicker();
                     }
                 });
         timeButton.setOnClickListener(
@@ -115,17 +132,6 @@ public class TaskEditFragment extends Fragment
 
 
     }
-    /**
-     * A helper method to show our Date picker
-     */
-    private void showDataPicker(){
-        //Create a fragment transaction
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
-
-        TimePickerDialogFragment fragment =
-                TimePickerDialogFragment.newInstace(taskDateAndTime);
-        fragment.show(ft, "timePicker");
-    }
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -134,20 +140,6 @@ public class TaskEditFragment extends Fragment
 // we can restore them later in onCreate.
         outState.putLong(TASK_ID, taskId);
         outState.putSerializable(TASK_DATE_AND_TIME, taskDateAndTime);
-    }
-    public static TaskEditFragment newInstance(long id){
-        TaskEditFragment fragment = new TaskEditFragment();
-        Bundle args = new Bundle();
-        args.putLong(TaskEditActivity.EXTRA_TASKID, id);
-        fragment.setArguments(args);
-        return fragment;
-    }
-    private static final int MENU_SAVE = 1;
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState){
-        super.onActivityCreated(savedInstanceState);
-        setHasOptionsMenu(true);
     }
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater){
@@ -168,10 +160,25 @@ public class TaskEditFragment extends Fragment
         return super.onOptionsItemSelected(item);
     }
     /**
-     * Call this method whenever the task’s date/time has changed and
-     * we need to update our date and time buttons.
+     * A helper method to show our Date picker
      */
-    private void updateDateAndTimeButton(){
+    private void showDatePicker() {
+        //Create a fragment transaction
+        android.app.FragmentTransaction ft = getFragmentManager().beginTransaction();
+
+        DatePickerDialogFragment newFragment =
+                DatePickerDialogFragment.newInstance( taskDateAndTime );
+        newFragment.show(ft, "datePicker");
+    }
+    private void showTimePicker(){
+        //Create a fragment transaction
+        android.app.FragmentTransaction ft = getFragmentManager().beginTransaction();
+
+        TimePickerDialogFragment fragment =
+                TimePickerDialogFragment.newInstace(taskDateAndTime);
+        fragment.show(ft, "timePicker");
+    }
+    private void updateDateAndTimeButtons(){
         //set the time button text
         DateFormat timeFormat =
                 DateFormat.getTimeInstance(DateFormat.SHORT);
@@ -185,23 +192,20 @@ public class TaskEditFragment extends Fragment
                 taskDateAndTime.getTime());
         dateButton.setText(dateForButton);
     }
-    /**
-     * This is the method that our DatePicker dialog will call when
-     * the user picks a date in the dialog.
-     */
     @Override
     public void onDateSet(DatePicker view, int year, int monthOfYear,
-                          int dayOfMounth){
+                          int dayOfMonth){
         taskDateAndTime.set(Calendar.YEAR, year);
         taskDateAndTime.set(Calendar.MONTH, monthOfYear);
-        taskDateAndTime.set(Calendar.DAY_OF_MONTH, dayOfMounth);
-        updateDateAndTimeButton();
+        taskDateAndTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+        updateDateAndTimeButtons();
     }
     @Override
     public void onTimeSet(TimePicker view, int hour, int minute){
         taskDateAndTime.set(Calendar.HOUR_OF_DAY, hour);
         taskDateAndTime.set(Calendar.MINUTE, minute);
-        updateDateAndTimeButton();
+        updateDateAndTimeButtons();
     }
+
 
 }
