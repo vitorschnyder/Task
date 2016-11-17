@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 
 /**
@@ -35,10 +36,43 @@ public class TaskProvider extends ContentProvider{
         db = new DatabaseHelper(getContext()).getWritableDatabase();
         return true;
     }
+    @Override
+    public Cursor query(Uri uri, String[] ignored1, String selection,
+                        String[] selectionArgs, String srtOrder){
+
+        String[] projection = new String[]{
+                COLUMN_TASKID,
+                COLUMN_TITLE,
+                COLUMN_NOTES,
+                COLUMN_DATE_TIME};
+
+        Cursor c;
+        switch (URI_MATCHER.match(uri)){
+            case LIST_TASK:
+                c = db.query(DATABASE_TABLE,
+                        projection, selection,
+                        selectionArgs, null, null, srtOrder);
+                break;
+            case ITEM_TASK:
+                c = db.query(DATABASE_TABLE, projection,
+                        COLUMN_TASKID + "=?",
+                        new String[]{Long.toString(ContentUris.parseId
+                                (uri))},
+                        null, null, null, null);
+                if (c.getCount() > 0){
+                    c.moveToFirst();
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown Uri: " + uri);
+        }
+        c.setNotificationUri(getContext().getContentResolver(), uri);
+        return c;
+    }
     /**
      * A helper class which knows to creat and update out database
      */
-    protected static class DatabaseHelper extends SQLiteDatabase{
+    protected static class DatabaseHelper extends SQLiteOpenHelper{
 
         static final String DATABASE_CREATE =
                 "create table" + DATABASE_TABLE + " (" +
@@ -158,39 +192,7 @@ public class TaskProvider extends ContentProvider{
      * out content provider. We´ll turn around and ask our database
      * for the information, and then return it on a Cursor
      */
-    @Override
-    public Cursor query(Uri uri, String[] ignored1, String selection,
-                        String[] selectionArgs, String srtOrder){
 
-        String[] projection = new String[]{
-                COLUMN_TASKID,
-                COLUMN_TITLE,
-                COLUMN_NOTES,
-                COLUMN_DATE_TIME};
-
-        Cursor c;
-        switch (URI_MATCHER.match(uri)){
-            case LIST_TASK:
-                c = db.query(DATABASE_TABLE,
-                        projection, selection,
-                        selectionArgs, null, null, srtOrder);
-                break;
-            case ITEM_TASK:
-                c = db.query(DATABASE_TABLE, projection,
-                        COLUMN_TASKID + "=?",
-                        new String[]{Long.toString(ContentUris.parseId
-                                (uri))},
-                        null, null, null, null);
-                if (c.getCount() > 0){
-                    c.moveToFirst();
-                }
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown Uri: " + uri);
-        }
-        c.setNotificationUri(getContext().getContentResolver(), uri);
-        return c;
-    }
 
 
 }
