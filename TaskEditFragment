@@ -4,6 +4,9 @@ package com.dummies.tasks.fragment;
 import android.app.DatePickerDialog.OnDateSetListener;
 import android.app.Fragment;
 import android.app.TimePickerDialog.OnTimeSetListener;
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -16,11 +19,13 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 import com.dummies.tasks.R;
 import com.dummies.tasks.activity.TaskEditActivity;
 import com.dummies.tasks.adapter.TaskListAdapter;
 import com.dummies.tasks.interfaces.OnEditFinished;
+import com.dummies.tasks.provider.TaskProvider;
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
@@ -153,7 +158,7 @@ public class TaskEditFragment extends Fragment implements
         switch (item.getItemId()){
             //The save button was pressed
             case MENU_SAVE:
-                //save();
+                save();
                 ((OnEditFinished) getActivity()).finishEditingTask();
                 return true;
         }
@@ -205,6 +210,43 @@ public class TaskEditFragment extends Fragment implements
         taskDateAndTime.set(Calendar.HOUR_OF_DAY, hour);
         taskDateAndTime.set(Calendar.MINUTE, minute);
         updateDateAndTimeButtons();
+    }
+    private void save(){
+        //Put all the values the user entered into a
+        //ContentValues object
+        String title = titleText.getText().toString();
+        ContentValues values = new ContentValues();
+        values.put(TaskProvider.COLUMN_TITLE, title);
+        values.put(TaskProvider.COLUMN_NOTES,
+                notesText.getText().toString());
+        values.put(TaskProvider.COLUMN_DATE_TIME,
+                taskDateAndTime.getTimeInMillis());
+
+        //taskId==0 when we create a new task,
+        //otherwise it´s the id of the task being edited.
+        if (taskId == 0){
+            //Create the new task and set a taskId to the id of
+            //the new task.
+            Uri itemUri = getActivity().getContentResolver()
+                    .insert(TaskProvider.CONTENT_URI, values);
+            taskId = ContentUris.parseId(itemUri);
+        }else {
+            //Update the existing task
+            Uri uri = ContentUris.withAppendedId(TaskProvider.CONTENT_URI,
+                    taskId);
+            int count = getActivity().getContentResolver().update(
+                    uri, values, null, null);
+
+            //if somehow we didn´t edit exactly one task,
+            //trhow an error
+            if (count != 1)
+                throw new IllegalStateException(
+                        "Unable to update " + taskId);
+        }
+        Toast.makeText(
+                getActivity(),
+                getString(R.string.task_saved_message),
+                Toast.LENGTH_SHORT).show();
     }
 
 
