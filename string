@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Tasks</string>
+    <string name="title">Title</string>
+    <string name="notes">Notes</string>
+    <string name="menu_insert">add_task</string>
+    <string name="confirm">Save</string>
+    <string name="delete_q">Delete</string>
+    <string name="delete">Delete</string>
+    <string name="task_saved_message">Task has been saved</string>
+    <string name="notify_new_task_title">Task Reminder</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
