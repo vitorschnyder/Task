@@ -1,13 +1,19 @@
 package com.dummies.tasks.fragment;
 
 
+
 import android.app.DatePickerDialog.OnDateSetListener;
 import android.app.Fragment;
+import android.app.FragmentTransaction;
+import android.app.LoaderManager;
 import android.app.TimePickerDialog.OnTimeSetListener;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -26,14 +32,18 @@ import com.dummies.tasks.activity.TaskEditActivity;
 import com.dummies.tasks.adapter.TaskListAdapter;
 import com.dummies.tasks.interfaces.OnEditFinished;
 import com.dummies.tasks.provider.TaskProvider;
+import com.dummies.tasks.util.ReminderManager;
 import com.squareup.picasso.Picasso;
+
 
 import java.text.DateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 
 public class TaskEditFragment extends Fragment implements
-        OnDateSetListener, OnTimeSetListener
+        OnDateSetListener, OnTimeSetListener,
+        LoaderManager.LoaderCallbacks<Cursor>
 {
     public static final String DEFAULT_FRAGMENT_TAG =
             "taskEditFragment";
@@ -111,11 +121,7 @@ public class TaskEditFragment extends Fragment implements
         imageView = (ImageView) v.findViewById(R.id.image);
         dateButton = (TextView) v.findViewById(R.id.task_date);
         timeButton = (TextView) v.findViewById(R.id.task_time);
-        // Set the thumbnail image
-        Picasso.with(getActivity())
-                .load(TaskListAdapter.getImageUrlForTask(taskId))
-                .into(imageView);
-        updateDateAndTimeButtons();
+
 
         //Tell the date and time buttons what to do when we click on
         //them.
@@ -133,9 +139,61 @@ public class TaskEditFragment extends Fragment implements
                         showTimePicker();
                     }
                 });
+        if (taskId == 0){
+            updateDateAndTimeButtons();
+        }else {
+            //Fire off a background loader to retrive the data from the
+            //database
+            getLoaderManager().initLoader(0, null, this);
+        }
         return v;
 
 
+    }
+    public Loader<Cursor> onCreateLoader(int id, Bundle args){
+        Uri taskUri = ContentUris.withAppendedId(
+                TaskProvider.CONTENT_URI, taskId);
+        return new CursorLoader(
+                getActivity(),
+                taskUri, null, null, null, null);
+    }
+
+    /**
+     * This method is called when the loader has finished loading its
+     * data
+     */
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor task){
+        if (task.getCount() == 0){
+            getActivity().runOnUiThread(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            ((OnEditFinished) getActivity())
+                                    .finishEditingTask();
+                        }
+                    });
+            return;
+        }
+        titleText.setText(
+                task.getString(
+                        task.getColumnIndexOrThrow(TaskProvider.COLUMN_TITLE)));
+        notesText.setText(
+                task.getString(
+                        task.getColumnIndexOrThrow(TaskProvider.COLUMN_NOTES)));
+
+        Long dateInMillis = task.getLong(
+                task.getColumnIndexOrThrow(TaskProvider.COLUMN_DATE_TIME));
+        Date date = new Date(dateInMillis);
+        taskDateAndTime.setTime(date);
+
+        Picasso.with(getActivity())
+                .load(TaskListAdapter.getImageUrlForTask(taskId))
+                .into(imageView);
+        updateDateAndTimeButtons();
+    }
+    public void onLoaderReset(Loader<Cursor> arg0){
+        //nothing to reset for this fragment
     }
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -169,7 +227,7 @@ public class TaskEditFragment extends Fragment implements
      */
     private void showDatePicker() {
         //Create a fragment transaction
-        android.app.FragmentTransaction ft = getFragmentManager().beginTransaction();
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
 
         DatePickerDialogFragment newFragment =
                 DatePickerDialogFragment.newInstance( taskDateAndTime );
@@ -177,7 +235,7 @@ public class TaskEditFragment extends Fragment implements
     }
     private void showTimePicker(){
         //Create a fragment transaction
-        android.app.FragmentTransaction ft = getFragmentManager().beginTransaction();
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
 
         TimePickerDialogFragment fragment =
                 TimePickerDialogFragment.newInstace(taskDateAndTime);
@@ -211,9 +269,9 @@ public class TaskEditFragment extends Fragment implements
         taskDateAndTime.set(Calendar.MINUTE, minute);
         updateDateAndTimeButtons();
     }
-    private void save(){
-        //Put all the values the user entered into a
-        //ContentValues object
+    private void save() {
+// Put all the values the user entered into a
+// ContentValues object
         String title = titleText.getText().toString();
         ContentValues values = new ContentValues();
         values.put(TaskProvider.COLUMN_TITLE, title);
@@ -221,33 +279,36 @@ public class TaskEditFragment extends Fragment implements
                 notesText.getText().toString());
         values.put(TaskProvider.COLUMN_DATE_TIME,
                 taskDateAndTime.getTimeInMillis());
-
-        //taskId==0 when we create a new task,
-        //otherwise it´s the id of the task being edited.
-        if (taskId == 0){
-            //Create the new task and set a taskId to the id of
-            //the new task.
+// taskId==0 when we create a new task,
+// otherwise it's the id of the task being edited.
+        if (taskId == 0) {
+// Create the new task and set taskId to the id of
+// the new task.
             Uri itemUri = getActivity().getContentResolver()
                     .insert(TaskProvider.CONTENT_URI, values);
             taskId = ContentUris.parseId(itemUri);
-        }else {
-            //Update the existing task
+        } else {
+// Update the existing task
             Uri uri = ContentUris.withAppendedId(TaskProvider.CONTENT_URI,
                     taskId);
             int count = getActivity().getContentResolver().update(
                     uri, values, null, null);
-
-            //if somehow we didn´t edit exactly one task,
-            //trhow an error
+// If somehow we didn't edit exactly one task,
+// throw an error
             if (count != 1)
-                throw new IllegalStateException(
-                        "Unable to update " + taskId);
+            throw new IllegalStateException(
+                    "Unable to update " + taskId);
         }
         Toast.makeText(
                 getActivity(),
                 getString(R.string.task_saved_message),
                 Toast.LENGTH_SHORT).show();
+
+        //Create a reminder for this task
+        ReminderManager.setReminder(getActivity(),
+                taskId, title, taskDateAndTime);
     }
+
 
 
 }
