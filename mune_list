@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Our default menu, which we´ll load into the action bar of our main app activity -->
+
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The insert button, used to create a new task. this button
+     is important and small, so we´ll force it to always be
+     in th action bar. On general, you should try to have as
+     few items as possible configured with showAsAction-always.
+     We´ll use the default Add button icon that ships with
+     Android. if you want to see what other drawable Android
+     ships with, you can look in -->
+    <item
+        android:id="@+id/menu_insert"
+        android:icon="@android:drawable/ic_menu_add"
+        android:showAsAction="always"
+        android:title="@string/menu_insert"
+        tools:ignore="AppCompatResource" />
+    <item
+        android:id="@+id/menu_settings"
+        android:showAsAction="never"
+        android:title="@string/menu_settings"/>
+
+</menu>
