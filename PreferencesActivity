@@ -1,0 +1,24 @@
+package com.dummies.tasks.activity;
+
+import android.app.Activity;
+import android.os.Bundle;
+
+import com.dummies.tasks.fragment.PreferencesFragment;
+
+/**
+ * An activity for displaying and editing preferences.
+ * Uses a PreferencesFragment to do all of the dirty work.
+ */
+
+public class PreferencesActivity extends Activity{
+
+    @Override
+    protected void onCreate(Bundle savedInstaceState){
+        super.onCreate(savedInstaceState);
+
+        getFragmentManager().beginTransaction().replace(
+                android.R.id.content,
+                new PreferencesFragment()).commit();
+
+    }
+}
