@@ -9,11 +9,13 @@ import android.app.LoaderManager;
 import android.app.TimePickerDialog.OnTimeSetListener;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.content.CursorLoader;
 import android.content.Loader;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -140,6 +142,22 @@ public class TaskEditFragment extends Fragment implements
                     }
                 });
         if (taskId == 0){
+            SharedPreferences prefs = PreferenceManager
+                    .getDefaultSharedPreferences(getActivity());
+            String defaultTitleKey = getString(R.string
+            .pref_task_title_key);
+            String defaultTimeKey = getString(R.string
+            .pref_default_time_from_now_key);
+
+            String defaultTitle = prefs.getString(defaultTitleKey, null);
+            String defaultTime = prefs.getString(defaultTimeKey, null);
+
+            if (defaultTitle != null)
+                titleText.setText(defaultTitle);
+
+            if (defaultTime != null && defaultTime.length() > 0)
+                taskDateAndTime.add(Calendar.MINUTE,
+                        Integer.parseInt(defaultTime));
             updateDateAndTimeButtons();
         }else {
             //Fire off a background loader to retrive the data from the
